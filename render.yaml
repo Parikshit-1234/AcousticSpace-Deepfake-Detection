@@ -1,0 +1,36 @@
+services:
+  # Backend Python FastAPI Service
+  - type: web
+    name: acousticspace-backend
+    runtime: docker
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    plan: free
+    envVars:
+      - key: ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 8000
+      - key: ALLOWED_ORIGINS
+        value: "*"
+      - key: REAL_DSP_MODE
+        value: "true"
+
+  # Frontend React Static Site
+  - type: web
+    name: acousticspace-frontend
+    runtime: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: acousticspace-backend
+          property: url
