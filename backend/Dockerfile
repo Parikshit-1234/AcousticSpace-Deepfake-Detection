@@ -9,9 +9,10 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy requirements and install
+# Copy requirements and install CPU-only PyTorch to minimize RAM footprint
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
 COPY . .
@@ -19,5 +20,6 @@ COPY . .
 # Expose backend port
 EXPOSE 8000
 
-# Start FastAPI server in production mode with multiple workers
-CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+# Start FastAPI server with 1 worker to stay strictly under 512MB RAM
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+
