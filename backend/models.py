@@ -333,7 +333,7 @@ class EnsembleForensicClassifier:
         
         # 5. Phase Discrepancy Net: Spoof risk correlates with vocoder phase variance and high spectral flatness
         spec_flatness = dsp_results.get("spectral_flatness", 0.005)
-        flatness_risk = max(0.0, min(1.0, (spec_flatness - 0.003) * 150.0))
+        flatness_risk = max(0.0, min(1.0, (spec_flatness - 0.035) * 20.0))
         scores["phase_discrepancy"] = float(out_phase[1]) * 0.05 + 0.95 * (breathing_risk * 0.4 + flatness_risk * 0.6)
         
         # 6. Spectral Consistency Net: Spoof risk matches frequency mismatches & unnatural vocoder flatness

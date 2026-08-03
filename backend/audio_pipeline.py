@@ -173,15 +173,16 @@ class AudioProcessingPipeline:
                 })
                 coherence_score -= 0.15
 
-        # Check for absolute digital zero-silence during pauses (strict indicator of AI TTS engines)
-        pause_frames = [total_energy[f] for f in range(len(total_energy)) if total_energy[f] < 0.05]
-        if len(pause_frames) > 10 and np.mean(pause_frames) < 1e-6:
+        # Check for absolute digital zero-silence during pauses (only flag if non-empty and speech active)
+        pause_frames = [total_energy[f] for f in range(len(total_energy)) if total_energy[f] < 0.02]
+        if len(pause_frames) > 30 and len(total_energy) > 0 and (len(pause_frames) / len(total_energy)) > 0.8:
+            # Only penalize if over 80% of entire audio is flat zero (abnormal dead silence)
             breathing_mismatches.append({
                 "timestamp": 0.5,
                 "reason": "Synthetic digital zero-silence floor in speech pauses (Neural Vocoder / TTS Artifact)",
                 "severity": 0.85
             })
-            coherence_score -= 0.25
+            coherence_score -= 0.15
 
         # Check for natural respiration frequency: only penalize long continuous speech (>12s) without breathing
         clip_duration = len(y) / sr

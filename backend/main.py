@@ -148,30 +148,10 @@ async def analyze_audio(
         else:
             # Run actual DSP pipeline
             dsp_results = pipeline.process_audio(temp_file_path)
-        # Inject custom triggers for demo/testing purposes
-        # This allows 100% accurate triggers in user-controlled scenarios
-        filename_lower = file.filename.lower()
-        is_forced_spoof = (
-            (demo_type == "force_spoof") or 
-            ("spoof" in filename_lower) or 
-            ("fake" in filename_lower) or 
-            ("deepfake" in filename_lower) or 
-            ("synth" in filename_lower) or 
-            ("100" in filename_lower) or
-            ("101" in filename_lower) or
-            ("102" in filename_lower) or
-            ("eleven" in filename_lower) or
-            ("ai_" in filename_lower) or
-            ("clone" in filename_lower)
-        )
-        is_forced_authentic = (
-            (demo_type == "force_authentic") or 
-            ("authentic" in filename_lower) or 
-            ("clean" in filename_lower) or 
-            ("genuine" in filename_lower) or
-            ("real" in filename_lower) or
-            ("vox_" in filename_lower)
-        )
+        # Inject custom triggers strictly when demo_type is explicitly requested as force_spoof or force_authentic
+        is_forced_spoof = (demo_type == "force_spoof")
+        is_forced_authentic = (demo_type == "force_authentic")
+
 
         if is_forced_spoof:
             # Inject RIR reverb mismatch (low clarity, high RT60 decay)
