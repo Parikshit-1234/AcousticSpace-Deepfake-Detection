@@ -16,11 +16,18 @@ from models import EnsembleForensicClassifier
 app = FastAPI(title="AcousticSpace Deepfake Detection Gateway")
 
 # Setup CORS
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+raw_origins = os.getenv("ALLOWED_ORIGINS", "*")
+if "*" in raw_origins or raw_origins.strip() == "*":
+    allowed_origins = ["*"]
+    allow_credentials = False
+else:
+    allowed_origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
+    allow_credentials = True
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_credentials=True,
+    allow_credentials=allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )

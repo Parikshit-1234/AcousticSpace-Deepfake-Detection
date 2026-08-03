@@ -131,8 +131,11 @@ export default function App() {
     formData.append('file', selectedFile);
     formData.append('demo_type', demoType);
 
+    const rawApiUrl = import.meta.env.VITE_API_URL;
+    const baseUrl = (rawApiUrl && rawApiUrl.trim() !== '' ? rawApiUrl.trim() : 'http://localhost:8000').replace(/\/+$/, '');
+
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/analyze`, {
+      const response = await fetch(`${baseUrl}/api/analyze`, {
         method: 'POST',
         body: formData,
       });
@@ -156,7 +159,11 @@ export default function App() {
         rt60: data.rt60
       });
     } catch (err: any) {
-      setError(err.message || 'Server connection error. Please ensure the backend is running.');
+      if (err.name === 'TypeError' && (err.message === 'Failed to fetch' || err.message?.includes('fetch'))) {
+        setError(`Failed to fetch from backend (${baseUrl}). If deployed on Render free tier, the backend service may be sleeping (takes 50-90s to spin up) or VITE_API_URL is missing in frontend static site environment variables.`);
+      } else {
+        setError(err.message || 'Server connection error. Please ensure the backend is running.');
+      }
     } finally {
       setIsLoading(false);
     }
