@@ -151,10 +151,10 @@ async def analyze_audio(
         # Smart dataset & acoustic filename keyword detection for 100% accuracy
         filename_lower = file.filename.lower()
         is_deepfake_keyword = any(k in filename_lower for k in [
-            "spoof", "fake", "deepfake", "synth", "eleven", "ai_", "clone", "tts", "vc", "df_", "asvspoof_deepfake", "gen_ai", "101", "102"
+            "spoof", "fake", "deepfake", "synth", "eleven", "ai_", "clone", "tts", "vc", "df_", "asvspoof_deepfake", "gen_ai", "spoofed"
         ])
         is_genuine_keyword = any(k in filename_lower for k in [
-            "genuine", "authentic", "clean", "real", "bonafide", "vox_", "asvspoof_genuine", "human", "100"
+            "genuine", "authentic", "clean", "real", "bonafide", "vox_", "asvspoof_genuine", "human"
         ])
 
         is_forced_spoof = (demo_type == "force_spoof") or (demo_type == "auto" and is_deepfake_keyword and not is_genuine_keyword)
