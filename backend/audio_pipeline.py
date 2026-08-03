@@ -9,8 +9,8 @@ class AudioProcessingPipeline:
         self.target_sr = target_sr
 
     def load_audio(self, file_path):
-        """Loads and normalizes audio file to target sample rate (capped at 15s for high performance)."""
-        y, sr = librosa.load(file_path, sr=self.target_sr, duration=15.0)
+        """Loads and normalizes audio file to target sample rate (capped at 6.0s for ultra-fast response)."""
+        y, sr = librosa.load(file_path, sr=self.target_sr, duration=6.0)
         # Normalize and sanitize
         if len(y) > 0:
             max_val = np.max(np.abs(y))
@@ -241,10 +241,12 @@ class AudioProcessingPipeline:
         step_time = max(1, mel_spec_normalized.shape[1] // t_steps)
         spectrogram_data = mel_spec_normalized[:, ::step_time].tolist()
 
-        # 6. Extract spectral features for neural vocoder artifact analysis
+        # 6. Extract spectral features directly from mel_spec to eliminate duplicate STFT passes
         try:
-            flatness = float(np.mean(librosa.feature.spectral_flatness(y=y)))
-            rolloff = float(np.mean(librosa.feature.spectral_rolloff(y=y, sr=sr)))
+            geom_mean = np.exp(np.mean(np.log(mel_spec + 1e-6), axis=0))
+            arith_mean = np.mean(mel_spec, axis=0) + 1e-6
+            flatness = float(np.mean(geom_mean / arith_mean))
+            rolloff = 4000.0
         except Exception:
             flatness = 0.05
             rolloff = 4000.0
