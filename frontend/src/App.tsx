@@ -17,6 +17,7 @@ import { AudioVisualizer } from './components/AudioVisualizer';
 import { RirVisualizer } from './components/RirVisualizer';
 import { BreathingChart } from './components/BreathingChart';
 import { ModelEnsembleCard } from './components/ModelEnsembleCard';
+import { AnalysisOverlay } from './components/AnalysisOverlay';
 
 interface SubModel {
   name: string;
@@ -205,6 +206,7 @@ export default function App() {
   if (!analysis) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4 relative">
+        {isLoading && <AnalysisOverlay filename={file?.name} />}
         {/* Subtle background glow */}
         <div className="absolute inset-0 z-0 pointer-events-none" style={{
           background: 'radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.15) 0%, rgba(5, 6, 10, 0) 70%)'
@@ -306,7 +308,8 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col relative">
+      {isLoading && <AnalysisOverlay filename={file?.name} />}
       {/* Top Header */}
       <header className="glass-panel border-x-0 border-t-0 rounded-none px-6 py-4 flex items-center justify-between z-20">
         <div className="flex items-center gap-3">
