@@ -49,16 +49,16 @@ export const ModelEnsembleCard: React.FC<ModelEnsembleCardProps> = ({
             <Cpu className="w-5 h-5 text-indigo-400" />
             Ensemble Consensus Matrix
           </h3>
-          <p className="text-xs text-slate-400">Decision fusion matrix from top 3 gold-standard deepfake neural architectures (Wav2Vec 2.0 / XLS-R, AASIST, RawNet3)</p>
+          <p className="text-xs text-slate-400">Decision fusion matrix from fine-tuned Wav2Vec 2.0 / XLS-R & WavLM speech transformer architectures</p>
         </div>
         <div className="text-right">
           <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Decision Weights</span>
-          <span className="text-xs font-semibold text-indigo-400">Tri-Model Fusion</span>
+          <span className="text-xs font-semibold text-indigo-400">Transformer Fusion</span>
         </div>
       </div>
 
       {/* Model Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {models.map((model, idx) => {
           const probPercent = Math.round(model.spoof_probability * 100);
           
@@ -106,8 +106,8 @@ export const ModelEnsembleCard: React.FC<ModelEnsembleCardProps> = ({
 
       {/* Summary Note */}
       <div className="bg-indigo-950/20 p-3 rounded-lg border border-indigo-950/40 text-xs text-slate-400 leading-relaxed">
-        <span className="font-semibold text-indigo-300">Gold-Standard Tri-Model Fusion: </span>
-        Combines Wav2Vec 2.0 / XLS-R cross-lingual vocal representation, AASIST time-frequency graph anti-spoofing textures, and RawNet3 direct 1D waveform processing for 100% accurate deepfake audio discrimination.
+        <span className="font-semibold text-indigo-300">Fine-Tuned Transformer Fusion: </span>
+        Uses fine-tuned Wav2Vec 2.0 / XLS-R and WavLM pre-trained speech representation models for state-of-the-art deepfake voice detection. All custom CNNs have been purged.
       </div>
     </div>
   );
