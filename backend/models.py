@@ -315,12 +315,12 @@ class EnsembleForensicClassifier:
         # proportionally based on physical acoustic metrics (echo decay and breathing coherence).
         # This completely removes hard branching blocks, providing a natural, smooth prediction curve.
         
-        # 1. Spatial Reverb Net: Spoof risk depends on room reverberation anomalies (extreme RT60 > 1.2s or negative C50 clarity)
-        reverb_risk = max(0.0, min(1.0, (rt60 - 0.9) * 0.8 + max(0.0, (-3.0 - c50) * 0.05)))
+        # 1. Spatial Reverb Net: Spoof risk depends on room reverberation anomalies (RT60 > 0.6s or low C50 clarity)
+        reverb_risk = max(0.0, min(1.0, (rt60 - 0.5) * 1.5 + max(0.0, (10.0 - c50) * 0.08)))
         scores["spatial_reverb"] = float(out_reverb[1]) * 0.05 + 0.95 * reverb_risk
         
         # 2. Vocal Cadence Transformer: Driven by respiration coherence & syllable onset spacing
-        breathing_risk = max(0.0, min(1.0, (1.0 - coherence) * 0.7 + (mismatches_cnt * 0.12)))
+        breathing_risk = max(0.0, min(1.0, (1.0 - coherence) * 1.2 + (mismatches_cnt * 0.2)))
         scores["vocal_cadence"] = float(out_cadence[1]) * 0.05 + 0.95 * max(0.02, min(0.98, breathing_risk))
         
         # 3. Breathing CNN: Anomaly score matches breathing mismatches and low coherence
@@ -331,7 +331,7 @@ class EnsembleForensicClassifier:
         
         # 5. Phase Discrepancy Net: Spoof risk correlates with vocoder phase variance and high spectral flatness
         spec_flatness = dsp_results.get("spectral_flatness", 0.005)
-        flatness_risk = max(0.0, min(1.0, (spec_flatness - 0.015) * 15.0))
+        flatness_risk = max(0.0, min(1.0, (spec_flatness - 0.003) * 150.0))
         scores["phase_discrepancy"] = float(out_phase[1]) * 0.05 + 0.95 * (breathing_risk * 0.4 + flatness_risk * 0.6)
         
         # 6. Spectral Consistency Net: Spoof risk matches frequency mismatches & unnatural vocoder flatness

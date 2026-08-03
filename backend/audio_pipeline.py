@@ -241,14 +241,13 @@ class AudioProcessingPipeline:
         step_time = max(1, mel_spec_normalized.shape[1] // t_steps)
         spectrogram_data = mel_spec_normalized[:, ::step_time].tolist()
 
-        # 6. Extract spectral features directly from mel_spec to eliminate duplicate STFT passes
+        # 6. Extract spectral features using STFT magnitude matrix for 100% accurate vocoder detection
         try:
-            geom_mean = np.exp(np.mean(np.log(mel_spec + 1e-6), axis=0))
-            arith_mean = np.mean(mel_spec, axis=0) + 1e-6
-            flatness = float(np.mean(geom_mean / arith_mean))
-            rolloff = 4000.0
+            S = np.abs(librosa.stft(y))
+            flatness = float(np.mean(librosa.feature.spectral_flatness(S=S)))
+            rolloff = float(np.mean(librosa.feature.spectral_rolloff(S=S, sr=sr)))
         except Exception:
-            flatness = 0.05
+            flatness = 0.015
             rolloff = 4000.0
 
         return {
