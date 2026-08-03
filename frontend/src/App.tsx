@@ -319,9 +319,9 @@ export default function App() {
           </div>
           <div>
             <h1 className="title-font text-lg font-extrabold tracking-tight flex items-center gap-1.5">
-              AcousticSpace <span className="text-xs text-indigo-400 font-semibold px-2 py-0.5 bg-indigo-950/40 rounded border border-indigo-900/60 uppercase">Forensics</span>
+              AcousticSpace <span className="text-xs text-indigo-400 font-semibold px-2 py-0.5 bg-indigo-950/40 rounded border border-indigo-900/60 uppercase">Infotact Analyst Portal</span>
             </h1>
-            <p className="text-[10px] text-slate-400">Deepfake Detection via Room Impulse Response (RIR) & Respiration</p>
+            <p className="text-[10px] text-slate-400">Deepfake Detection via Room Impulse Response (RIR) Acoustics & Respiration Cadence</p>
           </div>
         </div>
 
