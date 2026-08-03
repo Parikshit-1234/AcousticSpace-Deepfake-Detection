@@ -331,11 +331,13 @@ class EnsembleForensicClassifier:
         # 4. Spatial Acoustics GMM: Spoof risk correlates with overall RIR anomalies
         scores["spatial_gmm"] = float(out_gmm[1]) * 0.05 + 0.95 * (reverb_factor * 0.5 + breathing_factor * 0.5)
         
-        # 5. Phase Discrepancy Net: Spoof risk correlates with temporal overlaps and phase variance
-        scores["phase_discrepancy"] = float(out_phase[1]) * 0.05 + 0.95 * (breathing_factor * 0.7 + clarity_factor * 0.3)
+        # 5. Phase Discrepancy Net: Spoof risk correlates with phase variance and high spectral flatness (AI vocoder noise)
+        spec_flatness = dsp_results.get("spectral_flatness", 0.05)
+        flatness_risk = max(0.0, min(1.0, (spec_flatness - 0.02) / 0.15))
+        scores["phase_discrepancy"] = float(out_phase[1]) * 0.05 + 0.95 * (breathing_factor * 0.4 + clarity_factor * 0.3 + flatness_risk * 0.3)
         
-        # 6. Spectral Consistency Net: Spoof risk matches frequency mismatches
-        scores["spectral_consistency"] = float(out_spectral[1]) * 0.05 + 0.95 * breathing_factor
+        # 6. Spectral Consistency Net: Spoof risk matches frequency mismatches & unnatural vocoder flatness
+        scores["spectral_consistency"] = float(out_spectral[1]) * 0.05 + 0.95 * (breathing_factor * 0.5 + flatness_risk * 0.5)
 
         # If HuggingFace models are not preloaded, align HF model scores with the acoustic ensemble risk
         if not hf_loaded:

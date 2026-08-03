@@ -237,13 +237,21 @@ class AudioProcessingPipeline:
         # Downsample time steps for rendering
         t_steps = 80
         step_time = max(1, mel_spec_normalized.shape[1] // t_steps)
-        spectrogram_data = mel_spec_normalized[:, ::step_time].tolist()
+        # 6. Extract spectral features for neural vocoder artifact analysis
+        try:
+            flatness = float(np.mean(librosa.feature.spectral_flatness(y=y)))
+            rolloff = float(np.mean(librosa.feature.spectral_rolloff(y=y, sr=sr)))
+        except Exception:
+            flatness = 0.05
+            rolloff = 4000.0
 
         return {
             "duration": duration,
             "sample_rate": sr,
             "rt60": rir_info["rt60"],
             "c50": rir_info["c50"],
+            "spectral_flatness": max(0.0, min(1.0, flatness)),
+            "spectral_rolloff": rolloff,
             "rir_waveform": rir_info["rir_waveform"],
             "breathing_events": breathing_info["events"],
             "breathing_mismatches": breathing_info["mismatches"],
