@@ -253,23 +253,25 @@ class EnsembleForensicClassifier:
         prob_b = local_breathing_factor
         prob_c = local_breathing_factor
         prob_d = local_breathing_factor
+        hf_loaded = False
         
         if dsp_results.get("forced_authentic", False):
             prob_a = 0.015
             prob_b = 0.018
             prob_c = 0.012
             prob_d = 0.022
+            hf_loaded = True
             print("[PRESET OVERRIDE] Forced authentic bypass applied to Hugging Face ensemble.")
         elif dsp_results.get("forced_spoof", False):
             prob_a = 0.998
             prob_b = 0.995
             prob_c = 0.997
             prob_d = 0.996
+            hf_loaded = True
             print("[PRESET OVERRIDE] Forced spoof bypass applied to Hugging Face ensemble.")
         elif audio_path and os.path.exists(audio_path):
             # Safe check: Only run Hugging Face model inference if pre-downloaded weights exist locally
             # This prevents 2GB memory spikes and hanging on cloud servers with 512MB RAM (like Render free tier)
-            hf_loaded = False
             try:
                 if hasattr(self, 'hf_model_a') and self.hf_model_a is not None:
                     # Run inference on pre-loaded models
