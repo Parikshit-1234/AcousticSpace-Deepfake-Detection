@@ -14,21 +14,21 @@ export const AnalysisOverlay: React.FC<AnalysisOverlayProps> = ({ filename }) =>
     { title: "Decoding PCM Audio Stream", detail: "Analyzing sample rate, bit depth & multi-channel PCM arrays...", code: "PCM_24BIT_16KHZ" },
     { title: "Extracting Room Impulse Response (RIR)", detail: "Evaluating early reflections, RT60 reverberation decay & C50 clarity...", code: "RIR_ESTIMATION" },
     { title: "Scanning Respiration & Cadence", detail: "Detecting friction noise spectrum, chest expansion & pause markers...", code: "RESP_COHERENCE" },
-    { title: "Evaluating Quad Neural Ensemble", detail: "Running Wav2Vec2, WavLM, ResNet & Spatial Acoustic Classifiers...", code: "NEURAL_ENSEMBLE" },
+    { title: "Evaluating Tri-Model Gold Ensemble", detail: "Running Wav2Vec 2.0 / XLS-R, AASIST Graph & RawNet3 Classifiers...", code: "GOLD_TRI_ENSEMBLE" },
     { title: "Fusing Forensic Decision Matrix", detail: "Calculating overall spoof probability & synthetic vocal biometrics...", code: "FUSION_CALC" }
   ];
 
-  // Progress simulation
+  // Progress simulation (Ultra-fast completion)
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress((prev) => {
-        if (prev < 96) {
-          const increment = Math.floor(Math.random() * 5) + 3;
-          return Math.min(prev + increment, 96);
+        if (prev < 99) {
+          const increment = Math.floor(Math.random() * 12) + 8;
+          return Math.min(prev + increment, 99);
         }
         return prev;
       });
-    }, 150);
+    }, 40);
 
     return () => clearInterval(interval);
   }, []);
@@ -205,7 +205,7 @@ export const AnalysisOverlay: React.FC<AnalysisOverlayProps> = ({ filename }) =>
           </div>
           <div className="bg-slate-900/80 p-2 rounded-lg border border-slate-800 text-center">
             <span className="text-[9px] text-slate-400 block uppercase font-mono">Ensemble</span>
-            <span className="text-xs font-bold font-mono text-fuchsia-300">10 Models</span>
+            <span className="text-xs font-bold font-mono text-fuchsia-300">3 Gold Models</span>
           </div>
         </div>
 
