@@ -9,11 +9,14 @@ class AudioProcessingPipeline:
         self.target_sr = target_sr
 
     def load_audio(self, file_path):
-        """Loads and normalizes audio file to target sample rate."""
-        y, sr = librosa.load(file_path, sr=self.target_sr)
-        # Normalize
+        """Loads and normalizes audio file to target sample rate (capped at 15s for high performance)."""
+        y, sr = librosa.load(file_path, sr=self.target_sr, duration=15.0)
+        # Normalize and sanitize
         if len(y) > 0:
-            y = y / (np.max(np.abs(y)) + 1e-8)
+            max_val = np.max(np.abs(y))
+            if max_val > 0:
+                y = y / max_val
+            y = np.nan_to_num(y, nan=0.0, posinf=1.0, neginf=-1.0)
         return y, sr
 
     def extract_rir_features(self, y, sr):
@@ -220,16 +223,16 @@ class AudioProcessingPipeline:
         # 3. Detect breathing
         breathing_info = self.detect_breathing_patterns(y, sr)
         
-        # 4. Generate downsampled waveform for visualization (e.g. 200 points)
         step = max(1, len(y) // 200)
-        waveform_data = y[::step].tolist()
+        waveform_arr = np.nan_to_num(y[::step], nan=0.0, posinf=1.0, neginf=-1.0)
+        waveform_data = waveform_arr.tolist()
         
         # 5. Extract mel spectrogram for neural networks
         # We can extract a 64-band mel spectrogram and downsample it for display
         mel_spec = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=64, hop_length=int(0.05*sr))
         mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
         # Normalize to [0, 1] range for visual presentation
-        mel_spec_normalized = ((mel_spec_db + 80) / 80).clip(0, 1)
+        mel_spec_normalized = np.nan_to_num(((mel_spec_db + 80) / 80).clip(0, 1), nan=0.0, posinf=1.0, neginf=0.0)
         
         # Downsample time steps for rendering
         t_steps = 80

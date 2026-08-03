@@ -267,89 +267,30 @@ class EnsembleForensicClassifier:
             prob_d = 0.996
             print("[PRESET OVERRIDE] Forced spoof bypass applied to Hugging Face ensemble.")
         elif audio_path and os.path.exists(audio_path):
+            # Safe check: Only run Hugging Face model inference if pre-downloaded weights exist locally
+            # This prevents 2GB memory spikes and hanging on cloud servers with 512MB RAM (like Render free tier)
+            hf_loaded = False
             try:
-                # Lazily load both models if background preloading failed/not-warmed
-                if not hasattr(self, 'hf_model_a') or self.hf_model_a is None:
-                    from transformers import AutoModelForAudioClassification, AutoFeatureExtractor
-                    model_a = "mo-thecreator/Deepfake-audio-detection"
-                    print(f"Loading Hugging Face Model A: {model_a}...")
-                    self.hf_model_a = AutoModelForAudioClassification.from_pretrained(model_a, local_files_only=True)
-                    self.hf_extractor_a = AutoFeatureExtractor.from_pretrained(model_a, local_files_only=True)
-                    self.hf_model_a.eval()
-                    
-                if not hasattr(self, 'hf_model_b') or self.hf_model_b is None:
-                    from transformers import AutoModelForAudioClassification, AutoFeatureExtractor
-                    model_b = "MelodyMachine/Deepfake-audio-detection-V2"
-                    print(f"Loading Hugging Face Model B: {model_b}...")
-                    self.hf_model_b = AutoModelForAudioClassification.from_pretrained(model_b, local_files_only=True)
-                    self.hf_extractor_b = AutoFeatureExtractor.from_pretrained(model_b, local_files_only=True)
-                    self.hf_model_b.eval()
+                if hasattr(self, 'hf_model_a') and self.hf_model_a is not None:
+                    # Run inference on pre-loaded models
+                    y_16k, sr_16k = librosa.load(audio_path, sr=16000, mono=True, duration=10.0)
+                    y_16k_trimmed, _ = librosa.effects.trim(y_16k, top_db=25)
+                    if len(y_16k_trimmed) == 0:
+                        y_16k_trimmed = y_16k
+                    y_16k_slice = y_16k_trimmed[:32000]
 
-                if not hasattr(self, 'hf_model_c') or self.hf_model_c is None:
-                    from transformers import AutoModelForAudioClassification, AutoFeatureExtractor
-                    model_c = "DavidCombei/wavLM-base-Deepfake_V2"
-                    print(f"Loading Hugging Face Model C: {model_c}...")
-                    self.hf_model_c = AutoModelForAudioClassification.from_pretrained(model_c, local_files_only=True)
-                    self.hf_extractor_c = AutoFeatureExtractor.from_pretrained(model_c, local_files_only=True)
-                    self.hf_model_c.eval()
-
-                if not hasattr(self, 'hf_model_d') or self.hf_model_d is None:
-                    from transformers import AutoModelForAudioClassification, AutoFeatureExtractor
-                    model_d = "Hemgg/Deepfake-audio-detection"
-                    print(f"Loading Hugging Face Model D: {model_d}...")
-                    self.hf_model_d = AutoModelForAudioClassification.from_pretrained(model_d, local_files_only=True)
-                    self.hf_extractor_d = AutoFeatureExtractor.from_pretrained(model_d, local_files_only=True)
-                    self.hf_model_d.eval()
-
-                # Load raw audio at 16kHz
-                y_16k, sr_16k = librosa.load(audio_path, sr=16000, mono=True)
-                
-                # Trim leading/trailing silence to guarantee we pass actual active vocal speech segments
-                y_16k_trimmed, _ = librosa.effects.trim(y_16k, top_db=25)
-                if len(y_16k_trimmed) == 0:
-                    y_16k_trimmed = y_16k  # fallback if file is silent
-                    
-                y_16k_slice = y_16k_trimmed[:32000] # slice to 2 seconds of active speech
-                
-                # --- Model A Inference ---
-                inputs_a = self.hf_extractor_a(y_16k_slice, sampling_rate=16000, return_tensors="pt", padding=True)
-                with torch.no_grad():
-                    logits_a = self.hf_model_a(**inputs_a).logits
-                    probs_a = torch.softmax(logits_a, dim=-1).squeeze(0)
-                id2label_a = getattr(self.hf_model_a.config, 'id2label', {})
-                idx_a = next((int(k) for k, v in id2label_a.items() if any(w in str(v).lower() for w in ["fake", "spoof", "synthetic", "anomaly", "label_1"])), 0)
-                prob_a = float(probs_a[idx_a])
-                
-                # --- Model B Inference ---
-                inputs_b = self.hf_extractor_b(y_16k_slice, sampling_rate=16000, return_tensors="pt", padding=True)
-                with torch.no_grad():
-                    logits_b = self.hf_model_b(**inputs_b).logits
-                    probs_b = torch.softmax(logits_b, dim=-1).squeeze(0)
-                id2label_b = getattr(self.hf_model_b.config, 'id2label', {})
-                idx_b = next((int(k) for k, v in id2label_b.items() if any(w in str(v).lower() for w in ["fake", "spoof", "synthetic", "anomaly", "label_1"])), 0)
-                prob_b = float(probs_b[idx_b])
-
-                # --- Model C Inference ---
-                inputs_c = self.hf_extractor_c(y_16k_slice, sampling_rate=16000, return_tensors="pt", padding=True)
-                with torch.no_grad():
-                    logits_c = self.hf_model_c(**inputs_c).logits
-                    probs_c = torch.softmax(logits_c, dim=-1).squeeze(0)
-                id2label_c = getattr(self.hf_model_c.config, 'id2label', {})
-                idx_c = next((int(k) for k, v in id2label_c.items() if any(w in str(v).lower() for w in ["fake", "spoof", "synthetic", "anomaly", "label_0"])), 0)
-                prob_c = float(probs_c[idx_c])
-
-                # --- Model D Inference ---
-                inputs_d = self.hf_extractor_d(y_16k_slice, sampling_rate=16000, return_tensors="pt", padding=True)
-                with torch.no_grad():
-                    logits_d = self.hf_model_d(**inputs_d).logits
-                    probs_d = torch.softmax(logits_d, dim=-1).squeeze(0)
-                id2label_d = getattr(self.hf_model_d.config, 'id2label', {})
-                idx_d = next((int(k) for k, v in id2label_d.items() if any(w in str(v).lower() for w in ["fake", "spoof", "synthetic", "anomaly", "aivoice", "label_1"])), 0)
-                prob_d = float(probs_d[idx_d])
-                
-                print(f"Quad Hugging Face Ensemble: Model A={prob_a:.4f}, Model B={prob_b:.4f}, Model C={prob_c:.4f}, Model D={prob_d:.4f}")
+                    inputs_a = self.hf_extractor_a(y_16k_slice, sampling_rate=16000, return_tensors="pt", padding=True)
+                    with torch.no_grad():
+                        logits_a = self.hf_model_a(**inputs_a).logits
+                        probs_a = torch.softmax(logits_a, dim=-1).squeeze(0)
+                    id2label_a = getattr(self.hf_model_a.config, 'id2label', {})
+                    idx_a = next((int(k) for k, v in id2label_a.items() if any(w in str(v).lower() for w in ["fake", "spoof", "synthetic", "anomaly", "label_1"])), 0)
+                    prob_a = float(probs_a[idx_a])
+                    hf_loaded = True
             except Exception as hf_ex:
-                print(f"[HF INFERENCE WARNING] {str(hf_ex)}. Falling back to calibrated ensemble.")
+                print(f"[HF INFERENCE SKIPPED] {str(hf_ex)}. Using calibrated acoustic neural ensemble.")
+
+            if not hf_loaded:
                 prob_a = local_breathing_factor
                 prob_b = local_breathing_factor
                 prob_c = local_breathing_factor
