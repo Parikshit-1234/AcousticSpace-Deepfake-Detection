@@ -121,7 +121,7 @@ export default function App() {
     }
   };
 
-  const uploadAndAnalyze = async (selectedFile: File) => {
+  const uploadAndAnalyze = async (selectedFile: File, overrideDemoType?: string) => {
     setIsLoading(true);
     setError(null);
     setIsPlaying(false);
@@ -129,7 +129,7 @@ export default function App() {
 
     const formData = new FormData();
     formData.append('file', selectedFile);
-    formData.append('demo_type', demoType);
+    formData.append('demo_type', overrideDemoType || demoType);
 
     const rawApiUrl = import.meta.env.VITE_API_URL;
     const baseUrl = (rawApiUrl && rawApiUrl.trim() !== '' ? rawApiUrl.trim() : 'http://localhost:8000').replace(/\/+$/, '');
@@ -178,6 +178,7 @@ export default function App() {
   // Demo tracks triggers
   const triggerDemoScan = (type: 'spoof' | 'authentic') => {
     const dummyBlob = new Blob([new Uint8Array(2000)], { type: 'audio/wav' });
+    const targetType = type === 'spoof' ? 'force_spoof' : 'force_authentic';
     const dummyFile = new File(
       [dummyBlob],
       type === 'spoof' ? 'forensic_intercept_spoof_09.wav' : 'vox_secure_authentic_33.wav',
@@ -185,14 +186,11 @@ export default function App() {
     );
     
     // Auto set configuration select
-    setDemoType(type === 'spoof' ? 'force_spoof' : 'force_authentic');
+    setDemoType(targetType);
     setFile(dummyFile);
     
     // Trigger upload on the newly created dummy file
-    setIsLoading(true);
-    setTimeout(() => {
-      uploadAndAnalyze(dummyFile);
-    }, 100);
+    uploadAndAnalyze(dummyFile, targetType);
   };
 
   // Printable report generator

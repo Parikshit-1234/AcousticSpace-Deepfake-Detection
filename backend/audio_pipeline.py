@@ -57,35 +57,31 @@ class AudioProcessingPipeline:
         rt60 = max(0.1, min(3.0, rt60))
         
         # 3. Calculate C50 (Clarity): ratio of energy in early 50ms to late (>50ms) reflections.
-        # Since we don't have the true RIR, we approximate it by correlation analysis of the signal.
-        # We can analyze the autocorrelation to find echoes/reflections.
-        autocorr = librosa.autocorrelate(y, max_size=int(0.2 * sr))
-        autocorr = autocorr / (np.max(autocorr) + 1e-8)
-        
-        # 50ms in samples
-        samples_50ms = int(0.05 * sr)
-        early_energy = np.sum(autocorr[:samples_50ms]**2)
-        late_energy = np.sum(autocorr[samples_50ms:]**2)
-        
-        c50 = float(10 * np.log10(early_energy / (late_energy + 1e-8)))
+        try:
+            max_sz = min(len(y), int(0.2 * sr))
+            if max_sz > 10:
+                autocorr = librosa.autocorrelate(y, max_size=max_sz)
+                autocorr = autocorr / (np.max(np.abs(autocorr)) + 1e-8)
+                samples_50ms = min(len(autocorr), int(0.05 * sr))
+                early_energy = np.sum(autocorr[:samples_50ms]**2)
+                late_energy = np.sum(autocorr[samples_50ms:]**2)
+                c50 = float(10 * np.log10((early_energy + 1e-8) / (late_energy + 1e-8)))
+            else:
+                c50 = 12.0
+        except Exception:
+            c50 = 12.0
+
         # Bound C50 between -15dB and +30dB
         c50 = max(-15.0, min(30.0, c50))
 
         # 4. Generate a simulated RIR curve matching the estimated RT60 and C50
-        # RIR consists of a direct path impulse, followed by sparse early reflections,
-        # followed by exponential noise decay (late reverberation).
         rir_len = int(rt60 * sr)
         t = np.arange(rir_len) / sr
-        
-        # Exponential decay factor based on RT60 (energy decays by 60dB, i.e., amplitude decays by 10^-3)
         decay_constant = 3 * np.log(10) / rt60
         envelope = np.exp(-decay_constant * t)
-        
-        # Add white noise shaped by the decay envelope
         noise = np.random.randn(rir_len)
         rir_waveform = noise * envelope
         
-        # Inject early reflections (spikes in the first 50ms)
         num_reflections = 8
         for _ in range(num_reflections):
             ref_idx = int(np.random.uniform(0.005, 0.05) * sr)
@@ -93,28 +89,24 @@ class AudioProcessingPipeline:
             if ref_idx < rir_len:
                 rir_waveform[ref_idx] += ref_amp * np.sign(np.random.randn())
                 
-        # Inject direct path at t=0
         rir_waveform[0] = 1.0
-        
-        # Normalize RIR
         rir_waveform = rir_waveform / (np.max(np.abs(rir_waveform)) + 1e-8)
+        rir_waveform = np.nan_to_num(rir_waveform, nan=0.0, posinf=1.0, neginf=-1.0)
         
         return {
             "rt60": rt60,
             "c50": c50,
-            "rir_waveform": rir_waveform.tolist()[:int(0.5 * sr)]  # send first 500ms
+            "rir_waveform": rir_waveform.tolist()[:int(0.5 * sr)]
         }
 
     def detect_breathing_patterns(self, y, sr):
-        """
-        Detects breathing pauses.
-        Breathing is characterized by low energy in speech frequencies,
-        relative high frequency energy (in-breath friction), and duration between 200ms-800ms.
-        """
-        # Bandpass filter the audio in the breathing friction band (500 Hz - 3000 Hz)
-        nyq = 0.5 * sr
-        b, a = signal.butter(4, [500/nyq, 3000/nyq], btype='band')
-        y_filt = signal.filtfilt(b, a, y)
+        """Detects breathing pauses safely."""
+        try:
+            nyq = 0.5 * sr
+            b, a = signal.butter(4, [500/nyq, 3000/nyq], btype='band')
+            y_filt = signal.filtfilt(b, a, y)
+        except Exception:
+            y_filt = y
         
         # Calculate amplitude envelopes
         frame_len = int(0.02 * sr)
