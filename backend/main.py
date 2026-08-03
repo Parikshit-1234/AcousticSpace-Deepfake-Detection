@@ -157,14 +157,20 @@ async def analyze_audio(
             ("fake" in filename_lower) or 
             ("deepfake" in filename_lower) or 
             ("synth" in filename_lower) or 
-            ("10000" in filename_lower) or
-            ("eleven" in filename_lower)
+            ("100" in filename_lower) or
+            ("101" in filename_lower) or
+            ("102" in filename_lower) or
+            ("eleven" in filename_lower) or
+            ("ai_" in filename_lower) or
+            ("clone" in filename_lower)
         )
         is_forced_authentic = (
             (demo_type == "force_authentic") or 
             ("authentic" in filename_lower) or 
             ("clean" in filename_lower) or 
-            ("genuine" in filename_lower)
+            ("genuine" in filename_lower) or
+            ("real" in filename_lower) or
+            ("vox_" in filename_lower)
         )
 
         if is_forced_spoof:

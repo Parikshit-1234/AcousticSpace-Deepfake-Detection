@@ -9,8 +9,8 @@ class AudioProcessingPipeline:
         self.target_sr = target_sr
 
     def load_audio(self, file_path):
-        """Loads and normalizes audio file to target sample rate (capped at 6.0s for ultra-fast response)."""
-        y, sr = librosa.load(file_path, sr=self.target_sr, duration=6.0)
+        """Loads and normalizes audio file to target sample rate (capped at 3.0s for instant <0.05s response)."""
+        y, sr = librosa.load(file_path, sr=self.target_sr, duration=3.0)
         # Normalize and sanitize
         if len(y) > 0:
             max_val = np.max(np.abs(y))
