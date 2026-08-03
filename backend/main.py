@@ -124,7 +124,7 @@ async def analyze_audio(
         is_mock_file = False
         try:
             file_size = os.path.getsize(temp_file_path)
-            if file_size < 10000 or "forensic_intercept_spoof" in file.filename.lower() or "vox_secure_authentic" in file.filename.lower():
+            if file_size < 1000 or "forensic_intercept_spoof" in file.filename.lower() or "vox_secure_authentic" in file.filename.lower():
                 is_mock_file = True
         except:
             pass
