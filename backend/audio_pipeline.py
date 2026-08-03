@@ -247,6 +247,8 @@ class AudioProcessingPipeline:
         # Downsample time steps for rendering
         t_steps = 80
         step_time = max(1, mel_spec_normalized.shape[1] // t_steps)
+        spectrogram_data = mel_spec_normalized[:, ::step_time].tolist()
+
         # 6. Extract spectral features for neural vocoder artifact analysis
         try:
             flatness = float(np.mean(librosa.feature.spectral_flatness(y=y)))
