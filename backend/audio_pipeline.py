@@ -173,34 +173,34 @@ class AudioProcessingPipeline:
                 })
                 coherence_score -= 0.15
 
-        # Check for digital zero-silence during pauses (common indicator of AI TTS engines)
-        pause_frames = [total_energy[f] for f in range(len(total_energy)) if total_energy[f] < 0.08]
-        if len(pause_frames) > 5 and np.mean(pause_frames) < 1e-3:
+        # Check for absolute digital zero-silence during pauses (strict indicator of AI TTS engines)
+        pause_frames = [total_energy[f] for f in range(len(total_energy)) if total_energy[f] < 0.05]
+        if len(pause_frames) > 10 and np.mean(pause_frames) < 1e-6:
             breathing_mismatches.append({
                 "timestamp": 0.5,
                 "reason": "Synthetic digital zero-silence floor in speech pauses (Neural Vocoder / TTS Artifact)",
-                "severity": 0.90
+                "severity": 0.85
             })
-            coherence_score -= 0.40
+            coherence_score -= 0.25
 
-        # Check for natural respiration frequency: typical human speech has periodic breath events
+        # Check for natural respiration frequency: only penalize long continuous speech (>12s) without breathing
         clip_duration = len(y) / sr
         breaths_per_minute = len(breathing_events) * (60.0 / clip_duration) if clip_duration > 0 else 0
         
-        if breaths_per_minute > 25:
+        if breaths_per_minute > 30:
             breathing_mismatches.append({
                 "timestamp": clip_duration / 2.0,
                 "reason": "Hyper-frequent respiration pattern (unnatural voice cadence)",
-                "severity": 0.65
+                "severity": 0.50
             })
-            coherence_score -= 0.25
-        elif len(breathing_events) == 0 or (breaths_per_minute < 2 and clip_duration > 4.0):
+            coherence_score -= 0.15
+        elif clip_duration > 12.0 and len(breathing_events) == 0:
             breathing_mismatches.append({
                 "timestamp": clip_duration / 2.0,
                 "reason": "Unnaturally long speech duration without respiration (AI Speech Synthesis Indicator)",
-                "severity": 0.85
+                "severity": 0.70
             })
-            coherence_score -= 0.45
+            coherence_score -= 0.30
 
         coherence_score = max(0.0, min(1.0, coherence_score))
 
