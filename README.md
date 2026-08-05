@@ -1,5 +1,9 @@
 # AcousticSpace Deepfake Detection 🎙️⚡
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Render-6366f1?style=for-the-badge&logo=render)](https://acousticspace-frontend.onrender.com/)
+
+🌐 **Live Demo Analyst Portal**: [https://acousticspace-frontend.onrender.com/](https://acousticspace-frontend.onrender.com/)
+
 **AcousticSpace** is an advanced, ultra-low-latency audio forensics and AI voice deepfake detection platform. By combining acoustic physics (Room Impulse Response / RIR modeling and reverberation decay) with respiratory cadence analysis and a multi-model PyTorch transformer ensemble, AcousticSpace exposes synthetic voice clones, neural text-to-speech (TTS), and voice conversion (VC) artifacts that standard audio classifiers miss.
 
 ---
